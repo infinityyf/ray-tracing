@@ -31,12 +31,15 @@ void Camera::SetProjection(double near, double far, double width_left, double wi
 
 
 //传入一个指针数组
-void Camera::GetPixelPos(int level) {
+void Camera::GetPixelPos() {
 	//在这里实现
 	Vector3f CenterPos = this->Postion4Calcu - this->N.NumDot(this->D);
-	for (int i = -(WIN_HIGH/2); i < WIN_HIGH/2; i++) {
-		for (int j = -(WIN_WIDTH / 2); j < WIN_WIDTH/2; j++) {
-			this->PixelPos[i + (WIN_HIGH / 2)][j + (WIN_WIDTH / 2)] = CenterPos + this->V.NumDot(j) + this->U.NumDot(i);
+	for (int i = -(WIN_HIGH/2); i <= WIN_HIGH/2; i++) {
+		for (int j = -(WIN_WIDTH / 2); j <= WIN_WIDTH/2; j++) {
+			this->PixelPos[(WIN_HIGH / 2)-i][j + (WIN_WIDTH / 2)] = CenterPos + this->V.NumDot(j) + this->U.NumDot(i);
 		}
 	}
+
+	this->ScreenX = Vector3f::Normalize(Vector3f(this->PixelPos[1][0], this->PixelPos[1][1]));
+	this->ScreenY = Vector3f::Normalize(Vector3f(this->PixelPos[2][0], this->PixelPos[1][0]));
 }

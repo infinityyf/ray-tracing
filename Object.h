@@ -12,10 +12,11 @@ class Object
 public:
 	Object();
 	~Object();
-	Object(Vector3f pos);
-	Object(Point p);
-	Object(double x, double y, double z);
+	Object(Vector3f pos ,Vector3f color);
+	Object(Point p, Vector3f color);
+	Object(double x, double y, double z, Vector3f color);
 	Point pos;
+	Vector3f color = Vector3f(1,1,1);
 	Vector3f pos_v;
 };
 
@@ -26,14 +27,16 @@ class Sphere : public Object
 public:
 	Sphere();
 	~Sphere();
-	Sphere(Vector3f pos,double r);
-	Sphere(Point p, double r);
-	Sphere(double x, double y, double z, double r);
+	Sphere(Vector3f pos,double r, Vector3f color);
+	Sphere(Point p, double r, Vector3f color);
+	Sphere(double x, double y, double z, double r, Vector3f color);
 	Vector3f GetNormal(Vector3f HitPoint);
+	Vector3f GetColor();
+
 	double radius;
 };
 
-void SetObject(Vector3f pos, double r);
+void SetObject(Vector3f pos, double r,Vector3f color);
 
 
 

@@ -3,12 +3,44 @@
 #include "Object.h"
 #include <iterator>
 #include <math.h>
+#include <climits>//使用内置的最大值
 
 using namespace std;
 
 Ray::Ray(){}
 
 Ray::~Ray(){}
+
+Vector3f SearchPoint(std::vector<RayHit>& HitList) {
+	double result = (std::numeric_limits<double>::max)();//这是一个函数
+	Vector3f color;
+	std::vector<RayHit>::iterator it = HitList.begin();
+	for (; it != HitList.end();it++) {
+		if ((*it).t <= result) {
+			result = (*it).t;
+			color = (*it).Color;
+		}
+	}
+	return color;
+}
+
+Vector3f MixColor(std::vector<Vector3f>& ColorList,int level) {
+
+	//int/int 结果还是int 这么浅显的问题还折腾这么久
+	std::vector<Vector3f>::iterator it = ColorList.begin();
+	Vector3f MixUp(0,0,0);
+	int i = 1;
+	for (; i <= (level*level) && it != ColorList.end(); i++, it++) {
+		MixUp = MixUp + (*it);
+	}
+	for (; i <= (level*level); i++) {
+		MixUp = MixUp + BACKGROUND_COLOR.NumDot((double)255/(level*level));
+	}
+	MixUp = MixUp.NumDot((double)1/255);
+	return MixUp;
+}
+
+
 
 Ray::Ray(Vector3f origin,double x, double y, double z) {
 	Vector3f temp_dir(x,y,z);
@@ -19,29 +51,93 @@ Ray::Ray(Vector3f origin,double x, double y, double z) {
 }
 
 
-void Ray::scanScreen(Camera& camera , Vector3f (*buffer)[WIN_WIDTH])
+void Ray::scanScreen(Camera& camera , Vector3f (*buffer)[WIN_WIDTH],int level)
 {
+	std::vector<Vector3f>ColorBuffer;
+	int centerX = level / 2;
+	int centerY = level / 2;
+	//多重采样的结果缓存
+	//以上均是为多重采样服务
 	ObjectList* spheres = ObjectList::getInstance();
 	double t;
 	Vector3f HitPoint;
 	Vector3f normal;
-
+	Vector3f color;
+	bool hit;
 	for (int i = 0; i < WIN_HIGH; i++) {
 		for (int j = 0; j < WIN_WIDTH; j++) {
-			//使用迭代器
-			vector<Sphere>::iterator it = (spheres->objects).begin();
-			Ray TestRay(camera.Postion4Calcu,camera.PixelPos[i][j].x, camera.PixelPos[i][j].y, camera.PixelPos[i][j].z);
-			for (;it!= (spheres->objects).end();it++) {
-				t = TestRay.HitSpheree((*it).pos_v, (*it).radius);
-				if (t>0) {
-					HitPoint = TestRay.GetPoint(t);
-					normal = (*it).GetNormal(HitPoint);
-					buffer[i][j].x = (normal.x/2)+0.5;
-					buffer[i][j].y = (normal.y/2)+0.5;
-					buffer[i][j].z = (normal.z/2)+0.5;
+			//现在考虑多重采样，根据level 进行多条射线的生成
+			ColorBuffer.clear();
+			bool HitExist = false;
+			//只要有一条线射到了就予以显示
+			for (int m = 0; m < (level*level);m++) {
+				int row = m/level;
+				int col = m%level;
+				//要考虑光线中心的偏移
+				row -= centerX;
+				col -= centerY;
+				Vector3f CurentPos = camera.PixelPos[i][j] + camera.ScreenX.NumDot((double)(col)/level)+ camera.ScreenY.NumDot(-(double)(row)/level);
+				double X = CurentPos.x;
+				double Y = CurentPos.y;
+				double Z = CurentPos.z;
+				//计算每条子射线的目标位置，之后生成射线
+
+				//使用迭代器
+				hit = false;
+				vector<Sphere>::iterator it = (spheres->objects).begin();
+				Ray TestRay(camera.Postion4Calcu, X, Y, Z);
+				for (; it != (spheres->objects).end(); it++) {
+					t = TestRay.HitSpheree((*it).pos_v, (*it).radius);
+					if (t>0) {
+						HitExist = true; //该像素需要上色
+						hit = true;
+						HitPoint = TestRay.GetPoint(t);
+						normal = (*it).GetNormal(HitPoint);
+						color = (*it).GetColor();
+						//
+						//这里后期应该还需要加上颜色
+						RayHit RayHitPoint = { t,HitPoint,normal,color };
+						TestRay.HitPoints.push_back(RayHitPoint);
+						//存储所有的交点
+					}
+				}
+				if (hit) {
+					Vector3f RayColor = SearchPoint(TestRay.HitPoints);
+					ColorBuffer.push_back(RayColor.NumDot((double)255/(level*level)));
 				}
 			}
+			if (HitExist) {
+				Vector3f Mixcolor = MixColor(ColorBuffer,level);
+				buffer[i][j].x = Mixcolor.x;
+				buffer[i][j].y = Mixcolor.y;
+				buffer[i][j].z = Mixcolor.z;
+			}
 
+			////使用迭代器
+			//hit = false;
+			//vector<Sphere>::iterator it = (spheres->objects).begin();
+			//double X = camera.PixelPos[i][j].x;
+			//double Y = camera.PixelPos[i][j].y;
+			//double Z = camera.PixelPos[i][j].z;
+			//Ray TestRay(camera.Postion4Calcu,X,Y,Z);
+			//for (;it!= (spheres->objects).end();it++) {
+			//	t = TestRay.HitSpheree((*it).pos_v, (*it).radius);
+			//	if (t>0) {
+			//		hit = true;
+			//		HitPoint = TestRay.GetPoint(t);
+			//		normal = (*it).GetNormal(HitPoint);
+			//		color = (*it).GetColor();
+			//		RayHit RayHitPoint = { t,HitPoint,normal,color};
+			//		TestRay.HitPoints.push_back(RayHitPoint);
+			//		//存储所有的交点
+			//	}
+			//	if (hit) {
+			//		color = SearchPoint(TestRay.HitPoints);
+			//		buffer[i][j].x = color.x;
+			//		buffer[i][j].y = color.y;
+			//		buffer[i][j].z = color.z;
+			//	}
+			//}
 		}
 	}
 }
