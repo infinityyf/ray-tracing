@@ -4,6 +4,8 @@
 #include "Object.h"
 #include "Camera.h"
 #include "Ray.h"
+#include "LightPhysic.h"
+#include <thread>
 
 HINSTANCE g_hInstance = 0;
 HANDLE g_hOutput = 0;
@@ -13,7 +15,28 @@ int screen_height=601;
 
 
 Camera MainCamera = Camera(Point(0, -600, 0));
+//设置相机位置
+EnvironmentLight Light0 = EnvironmentLight(Vector3f(1.f, 1.f, 1.f),0.5);
+//设置环境光
 
+PointLight Light1 = PointLight(Vector3f(0,0,150),Vector3f(1.f,1.f,1.f),0.0001f,0.00001f);
+//设置点光源
+
+
+void UseThread(HDC hdc,Vector3f buffer[WIN_HIGH][WIN_WIDTH]) {
+	std::thread draw_threads[WIN_HIGH*WIN_WIDTH];
+	//std::vector<std::thread> drawthreads;
+	//std::thread t1(SetPixel, hdc, 10, 10, RGB(200, 200, 200));
+	//t1.join();
+	for (int i = 0; i < WIN_HIGH; i++) {
+		for (int j = 0; j < WIN_WIDTH; j++) {
+			draw_threads[i*WIN_WIDTH+j] = std::thread(SetPixel,hdc ,j, i, RGB(ScreenColorBuffer[i][j].x * 255, ScreenColorBuffer[i][j].y * 255, ScreenColorBuffer[i][j].z * 255));
+			//SetPixel(hdc, j, i, RGB(ScreenColorBuffer[i][j].x * 255, ScreenColorBuffer[i][j].y * 255, ScreenColorBuffer[i][j].z * 255));
+			//draw_threads[i][j] = std::thread(add,1);
+		}
+	}
+	for (int i = 0; i < WIN_HIGH*WIN_WIDTH; i++) draw_threads[i].join();
+}
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); //窗口函数说明
 
@@ -83,7 +106,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,
 	//vector<double> zBuffer;
 	//初始化摄像机
 	MainCamera.lookat(0, 0, 0, 0, 0, 1);
-	MainCamera.GetPixelPos(ONE_SAMPLE);
+	MainCamera.GetPixelPos();
+	Light0.Enable = true;
+	Light1.Enable = true;
+
 
 	switch (message) {
 	case WM_PAINT:
@@ -93,23 +119,25 @@ LRESULT CALLBACK WndProc(HWND hwnd,
 		
 
 		//首先初始化场景
-		SetObject(Vector3f(0,0,0),100);
+		SetObject(Vector3f(0,0,0),100, Vector3f(0.f,0.74f,1.f));
+		SetObject(Vector3f(0, 0, -10000), 9900 , Vector3f(0.254f,0.411f,1.f));
 		//初始化背景
 		InitScreen();
 
 		//开始扫描，传入每个像素的坐标和相机坐标
-		Ray::scanScreen(MainCamera, ScreenColorBuffer);
-
-		//计算
-		Buffer2RealScreen();
-		
+		//Ray::scanScreen(MainCamera, ScreenColorBuffer, THREE_SAMPLE);
+		Ray::scanScreen(MainCamera, ScreenColorBuffer, ONE_SAMPLE,Light0,Light1);
+		//依次为环境光点光源
 
 		//投影到屏幕
 		for (int i = 0; i < WIN_HIGH; i++) {
 			for (int j = 0; j < WIN_WIDTH; j++) {
 				SetPixel(hdc, j, i, RGB(ScreenColorBuffer[i][j].x *255, ScreenColorBuffer[i][j].y*255, ScreenColorBuffer[i][j].z*255));
+				//实际上 数组的排列和窗体像素的坐标是一致的所以不用交换
+				//SetPixel(hdc, j, i, RGB(100,100,100));
 			}
 		}
+		//UseThread(hdc, ScreenColorBuffer);
 
 		//此处日后使用多线程绘制
 

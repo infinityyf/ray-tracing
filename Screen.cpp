@@ -1,5 +1,6 @@
 #include "Screen.h"
 
+
 Vector3f ScreenColorBuffer[WIN_HIGH][WIN_WIDTH] = {};
 
 void swap(Vector3f& a, Vector3f& b) {
@@ -11,7 +12,7 @@ void swap(Vector3f& a, Vector3f& b) {
 void InitScreen() {
 	for (int i = 0; i < WIN_HIGH; i++) {
 		for (int j = 0; j < WIN_WIDTH ; j++)
-			ScreenColorBuffer[i][j] = Vector3f(0.62, 0.47, 0.93);
+			ScreenColorBuffer[i][j] = BACKGROUND_COLOR;
 	}
 }
 

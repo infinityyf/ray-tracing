@@ -29,7 +29,10 @@ public:
 	static Vector3f CrossMult(Vector3f v1,Vector3f v2,int flag);	//叉乘
 	Vector3f operator+(const Vector3f& a);							//重载加法
 	Vector3f operator-(const Vector3f& a);
+	Vector3f operator*(const Vector3f& a);							//乘法，对应元素相乘
 	double Mult(Vector3f v);										//点积
+	static double Distance(const Vector3f& v1,const Vector3f& v2);
+	static double GetCosine( Vector3f& v1, Vector3f& v2);
 
 	double x;
 	double y;
