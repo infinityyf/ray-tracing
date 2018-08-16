@@ -24,10 +24,13 @@ public:
 	Vector3f V;//view_x
 	Vector3f U;//view_y
 
+	Vector3f ScreenX;
+	Vector3f ScreenY;
+
 	void SetProjection(double near,double far,double width_left,double width_right,double height_top,double height_buttom);
 
 	//计算每个像素的坐标，传入一个指针数组
-	void GetPixelPos(int level);
+	void GetPixelPos();
 
 
 	//默认尺度
