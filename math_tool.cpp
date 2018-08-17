@@ -77,11 +77,30 @@ Vector3f Vector3f::operator-(const Vector3f & a)
 	return new_v;
 }
 
+Vector3f Vector3f::operator*(const Vector3f & a)
+{
+	Vector3f v = Vector3f(this->x*a.x,this->y*a.y,this->z*a.z);
+	return v;
+}
+
 double Vector3f::Mult(Vector3f v)
 {
 	double _v;
 	_v = x*v.x + y*v.y + z*v.z;
 	return _v;
+}
+
+double Vector3f::Distance(const Vector3f & v1, const Vector3f & v2)
+{
+	double d = sqrt(pow(v1.x-v2.x,2)+ pow(v1.y - v2.y,2) + pow(v1.z - v2.z,2));
+	return d;
+}
+
+double Vector3f::GetCosine(Vector3f & v1, Vector3f & v2)
+{
+	//这里默认都式单位向量
+	double cos = Vector3f::Normalize(v1).Mult(Vector3f::Normalize(v2));
+	return cos;
 }
 
 
