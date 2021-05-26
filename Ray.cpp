@@ -50,6 +50,7 @@ Vector3f Ray::GetPoint(double t)
 {
 	Vector3f t_times_normal = this->NormalDirection.NumDot(t);
 	Vector3f hit_point= this->origin + t_times_normal;
+	//rest
 	return hit_point;
 }
 
